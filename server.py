@@ -1,7 +1,7 @@
 import socket
 
-HOST = "localhost"  # Change this to your actual IP address if needed
-PORT = 4456
+HOST = "localhost"
+PORT = 50445
 BUFFER_SIZE = 1024
 
 def main():
