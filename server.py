@@ -1,74 +1,71 @@
+import os
 import socket
 
-HOST = "localhost"
-PORT = 50445
-BUFFER_SIZE = 1024
+IP = "127.0.0.1"
+PORT = 4456
+SIZE = 1024
+FORMAT = "utf"
+SERVER_FOLDER = "server_folder"
+
+
+def handle_client_connection(conn, addr):
+    print(f"[NEW CONNECTION] {addr} connected.\n")
+
+    # Receive folder name
+    folder_name = conn.recv(SIZE).decode(FORMAT)
+
+    # Create the folder if it doesn't exist
+    folder_path = os.path.join(SERVER_FOLDER, folder_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        conn.send(f"Folder ({folder_name}) created.".encode(FORMAT))
+    else:
+        conn.send(f"Folder ({folder_name}) already exists.".encode(FORMAT))
+
+    # Receive files
+    while True:
+        msg = conn.recv(SIZE).decode(FORMAT)
+        cmd, data = msg.split(":")
+
+        if cmd == "FILENAME":
+            # Receive the file name
+            print(f"[CLIENT] Received the filename: {data}.")
+
+            file_path = os.path.join(folder_path, data)
+            file = open(file_path, "w")
+            conn.send("Filename received.".encode(FORMAT))
+
+        elif cmd == "DATA":
+            # Receive data from client
+            print(f"[CLIENT] Receiving the file data.")
+            file.write(data)
+            conn.send("File data received".encode(FORMAT))
+
+        elif cmd == "FINISH":
+            # Close the file and send confirmation
+            file.close()
+            print(f"[CLIENT] {data}.\n")
+            conn.send("The data is saved.".encode(FORMAT))
+
+        elif cmd == "CLOSE":
+            # Close the connection
+            conn.close()
+            print(f"[CLIENT] {data}")
+            break
+
 
 def main():
-    try:
-        # Create a TCP socket
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-            # Bind the socket to the specified IP and port
-            server_socket.bind((HOST, PORT))
-            # Listen for incoming connections
-            server_socket.listen()
+    print("[STARTING] Server is starting.\n")
 
-            print(f"[SERVER] Listening for connections on {HOST}:{PORT}")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((IP, PORT))
+    server.listen()
+    print("[LISTENING] Server is waiting for clients.")
 
-            while True:
-                # Accept an incoming connection
-                client_socket, client_address = server_socket.accept()
-                print(f"[SERVER] Connected to {client_address}")
-
-                # Handle file transfer with the connected client
-                handle_file_transfer(client_socket)
-
-                # Close the connection with the client
-                client_socket.close()
-                print(f"[SERVER] Disconnected from {client_address}")
-    except Exception as e:
-        print(f"[SERVER] Error: {e}")
-
-def handle_file_transfer(client_socket):
     while True:
-        # Receive command and data from the client
-        command_and_data = client_socket.recv(BUFFER_SIZE).decode('utf-8')
+        conn, addr = server.accept()
+        handle_client_connection(conn, addr)
 
-        if command_and_data:
-            # Split the command and data
-            command, data = command_and_data.split(':')
 
-            if command == 'FILENAME':
-                # Receive the filename
-                filename = data
-                print(f"[SERVER] Received filename: {filename}")
-
-                # Construct the file path
-                file_path = os.path.join('server_folder', filename)
-
-                # Send a message to the client indicating filename reception
-                client_socket.send('Filename received'.encode('utf-8'))
-
-                # Open the file for writing
-                with open(file_path, 'wb') as file:
-                    # Receive file data from the client
-                    while True:
-                        data = client_socket.recv(BUFFER_SIZE)
-
-                        if not data:
-                            break
-
-                        file.write(data)
-
-                    # Send a message to the client indicating data reception
-                    client_socket.send('File data received'.encode('utf-8'))
-
-                # Print a message indicating file transfer completion
-                print(f"[SERVER] File transfer completed: {filename}")
-
-            elif command == 'CLOSE':
-                # Close the connection
-                break
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
