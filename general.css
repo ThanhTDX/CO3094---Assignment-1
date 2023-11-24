@@ -1,0 +1,15 @@
+body {
+    background-color: rgb(79, 79, 79);
+    margin: 0;
+    color: white;
+    font-family: roboto, Arial;
+    min-height: 1000px;
+}
+
+h1,h2,h3 {
+    margin: 20px 0 0 0;
+}
+
+td {
+    background-color: rgb(60, 61, 62);
+}

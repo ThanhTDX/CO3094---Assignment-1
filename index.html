@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client UI</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style/general.css">
+    <link rel="stylesheet" href="style/container.css">
+    <link rel="stylesheet" href="style/file.css">
+
+</head>
+
+<body>
+    <div class="grid">
+        <div class="local_repository">
+            <div class="publish">
+                <h3>Publish file</h3>
+                <div>
+                    <input class="publish_cmd" type="text" placeholder="publish <file path> <file name>">
+                </div>
+                <div>
+                    <button>Edit main directory</button>
+                </div>
+            </div>
+            <div class="local_files">
+                <h3>Local repository</h3>
+                <table class="files_table">
+                    <thead class="table_header">
+                        <tr>
+                            <th class="coll-1">File Name</th>
+                            <th class="coll-2">Size</th>
+                            <th class="coll-3">Date</th>
+                            <th class="coll-4"><img class="trash_icon" src="icons/trash-can.png" alt="Del"></th>
+                            <th class="coll-5"><img class="download_icon" src="icons/download.png" alt="DL"></th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="coll-1">sample</td>
+                        <td class="coll-2">32Mb</td>
+                        <td class="coll-3">01/02/2023</td>
+                        <td class="coll-4"><img class="trash_icon" src="icons/trash-can.png" alt="Del"></td>
+                        <td class="coll-5"><img class="download_icon" src="icons/download.png" alt="DL"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="public_repository">
+            <div class="fetch">
+                <h3>Fetch file</h3>
+                <div>
+                    <input class="publish_cmd" type="text" placeholder="fetch <file name>">
+                </div>
+                <!-- <div>
+                    <button>Edit main directory</button>
+                </div> -->
+            </div>
+            <div class="public files">
+                <h3>Public repository</h3>
+                <table class="files_table">
+                    <thead class="table_header">
+                        <tr>
+                            <th class="coll-1">File Name</th>
+                            <th class="coll-2">Size</th>
+                            <th class="coll-3">Date</th>
+                            <th class="coll-4">Hostname</th>
+                            <th class="coll-5"><img class="download_icon" src="icons/download.png" alt="DL"></th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td class="coll-1">sample</td>
+                        <td class="coll-2">32Mb</td>
+                        <td class="coll-3">01/02/2023</td>
+                        <td class="coll-4">desktop-A</td>
+                        <td class="coll-5"><img class="download_icon" src="icons/download.png" alt="DL"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="js/script.js"></script>
+</html>

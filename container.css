@@ -1,0 +1,75 @@
+.grid {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 1000px;
+}
+
+.local_repository,
+.public_repository {
+  /* position: relative; */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: black;
+  margin: 0 50px;
+}
+
+.files_table {
+  /* height: 100%; */
+  width: 100%;
+  border: 5px solid rgb(83, 90, 93);
+}
+
+.table_header {
+  background-color: rgb(83, 90, 93);
+}
+
+.publish {
+  max-height: 500px;
+}
+
+.publish_cmd {
+  color: rgb(70, 70, 70);
+  width: 100%;
+}
+
+.local_files,
+.public_files {
+  flex: 1;
+}
+
+.coll-2,
+.coll-3,
+.coll-4,
+.coll-5 {
+  text-align: center;
+}
+
+.coll-1 {
+  width: 70%;
+}
+
+.coll-2 {
+  width: 10%;
+}
+
+.coll-3 {
+  width: 10%;
+}
+
+.coll-4 {
+  width: 5%;
+}
+
+.coll-5 {
+  width: 5%;
+}
+
+.trash_icon {
+  width: 25px;
+}
+
+.download_icon {
+  width: 25px;
+}
