@@ -1,18 +1,28 @@
 import os
 import socket
+import threading
 
 IP = "127.0.0.1"
 PORT = 4456
 SIZE = 1024
 FORMAT = "utf"
 
+# Dictionary to store client addresses and associated filenames
+client_file_dict = {}
+
+def print_current_files():
+    print("\n[SERVER] Current Files:")
+    for addr, filename in client_file_dict.items():
+        print(f"Client Address: {addr}, Filename: {filename}")
+    print("")
 
 def handle_client_connection(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.\n")
 
     # Receive folder name
-    folder_name = conn.recv(SIZE).decode(FORMAT)
-
+    msg = conn.recv(SIZE).decode(FORMAT)
+    cmd, folder_name = msg.split(":")
+    
     # Create the folder if it doesn't exist
     folder_path = os.path.join("folder_in_server", folder_name)
     if not os.path.exists(folder_path):
@@ -21,37 +31,37 @@ def handle_client_connection(conn, addr):
     else:
         conn.send(f"Folder ({folder_name}) already exists.".encode(FORMAT))
 
-    # Receive files
+    # Receive and handle commands
     while True:
         msg = conn.recv(SIZE).decode(FORMAT)
         cmd, data = msg.split(":")
 
-        match cmd:
-            case "FILENAME":
+        if cmd == "FILENAME":
             # Receive the file name
-                print(f"[CLIENT] Received the filename: {data}.")
+            print(f"[CLIENT] Received the filename: {data}.")
 
-                file_path = os.path.join(folder_path, data)
-                file = open(file_path, "w")
-                conn.send("Filename received.".encode(FORMAT))
+            file_path = os.path.join(folder_path, data)
+            conn.send("Filename received.".encode(FORMAT))
 
-            case "DATA":
-            # Receive data from client
-                print(f"[CLIENT] Receiving the file data.")
-                file.write(data)
-                conn.send("File data received".encode(FORMAT))
+        elif cmd == "LIST":
+            # Send the list of filenames to the client
+            file_list = os.listdir(folder_path)
+            conn.send(":".join(file_list).encode(FORMAT))
 
-            case "FINISH":
-            # Close the file and send confirmation
-                file.close()
-                print(f"[CLIENT] {data}.\n")
-                conn.send("The data is saved.".encode(FORMAT))
+        elif cmd == "PUSH_FILENAME":
+            # Receive the pushed filename and store in the dictionary
+            client_file_dict[addr] = data
+            conn.send(f"Filename ({data}) pushed and stored.".encode(FORMAT))
 
-            case "CLOSE":
+        elif cmd == "SHOW_FILES":
+            # Print the current file names and associated client addresses
+            print_current_files()
+
+        elif cmd == "CLOSE":
             # Close the connection
-                conn.close()
-                print(f"[CLIENT] {data}")
-                break
+            conn.close()
+            print(f"[CLIENT] {data}")
+            break
 
 
 def main():
@@ -64,7 +74,10 @@ def main():
 
     while True:
         conn, addr = server.accept()
-        handle_client_connection(conn, addr)
+
+        # Create a new thread for each client
+        client_thread = threading.Thread(target=handle_client_connection, args=(conn, addr))
+        client_thread.start()
 
 
 if __name__ == "__main__":
