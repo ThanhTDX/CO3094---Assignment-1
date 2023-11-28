@@ -17,35 +17,47 @@ def remove_client(client_id):
         if client_id in value:
             value.remove(client_id)
 
-def ping_client(conn):
-    message = f'PING'
-    message_length = len(message)
-    send_length = str(message_length).encode(FORMAT)
-    send_length+= b' '*(SIZE-len(send_length))
-    conn.send(send_length)
-    conn.send(message)
+def ping_client(client_id):
+    message = 'ping' + " " + str(client_id)
+    send_message(client_id, message)
 
     time.sleep(0.1) # wait time for client to respond
-    message_length = connection.recv(HEADER).decode(FORMAT) # convert bytes format -> string 
+    message_length = connection.recv(HEADER).decode(FORMAT) 
     if message_length:
-        # Received a message's length (message_length != 0)
         message_length = int(message_length)
         message = connection.recv(message_length).decode(FORMAT)
         print(message)
+        return True
     else:
         remove_client(client_id)
+        return False
 
-def get_selection_from_list(fname):
-    pass
+
+def send_avail_sender_list(receiver_id, fname):
+    '''
+    The sending message follows this format:
+    [<id1>, <id2>, ...]
+    Example:
+        [('192.168.1.105', 62563), ('192.168.1.105', 62564)]
+        []
+    '''
+    conn = client_list[receiver_id]
+    sender_list = file_list.get(fname, [])
+    send_message(receiver_id, str(sender_list))
+    return (len(sender_list) > 0)
+        
 
 def check_valid_sender(client_id, fname):
-    pass
+    sender_list = file_list[fname]
+    if (client_id in sender_list) and ping_client(client_id):
+        return True
+    else:
+        return False
 
-def notify_client(client_id, fname = None):
-        
-    message = str(client_id)
-    if fname is not None:
-        message = message + " " + fname
+def send_message(client_id, message = ""):
+    '''
+    Send message to specific client
+    '''
     message_length = len(message)
     send_length = str(message_length).encode(FORMAT)
     send_length+= b' '*(SIZE-len(send_length))
@@ -54,8 +66,15 @@ def notify_client(client_id, fname = None):
     conn.send(send_length)
     conn.send(message)
 
-def handle_fetch_file(client_id, fname):
+
+def handle_fetch_file(receiver_id, fname):
     '''
+    The client's message that used for dertermine source client
+    must follow this format:
+    <sender_id>
+    Example:
+        ('192.168.1.105', 62563)
+
     The sender will receive message in the following format from the server:
     <receiver_id> <fname>
     Example:
@@ -66,40 +85,59 @@ def handle_fetch_file(client_id, fname):
     Example:
         ('192.168.1.105', 62563)
     '''
-    while True:
-        client_id = get_selection_from_list(fname)
-        if check_valid_sender(client_id, fname):
-            break
-    notify_client(receiver_id, fname)
-    notify_client(sender_id)
-        
+    valid_sender = send_avail_sender_list(receiver_id, fname)
+    if not valid_sender:
+        send_message(receiver_id, "invalid fetchfile")
+    else:
+        while True:
+            message_length = connection.recv(HEADER).decode(FORMAT) 
+            if message_length:
+                message_length = int(message_length)
+                sender_id = connection.recv(message_length).decode(FORMAT)
+                if check_valid_sender(sender_id, fname):
+                    send_message(receiver_id, "valid sender_id")
+                    break
+
+
+        # Notify receiver
+        re_message = str(sender_id)
+        se_message = str(receiver_id) + " " + fname
+        send_message(receiver_id, se_message)
+        send_message(sender_id, re_message)
+
+
 def handle_upload_file(client_id, fname):
     file_list[fname] = file_list.get(fname, []) + [(client_id, lname)]
     print("Client {} successfully upload file {}".format(client_id, fname))
 
+
 def handle_commands():
     while True:
         command = input()
-        func, hostname = command.split()
-        # Add logic to handle server-side commands
+        func = command.split()[0]
+
         if func == 'discover':
+            hostname = command.split()[1]
             files = []
             for fname, client_list in file_list.items():
-                for client_id, lname in client_list:
+                for client_id in client_list:
                     if hostname == client_id:
                         files.append(fname)
                         break
-            print("List of files of current hostname {}:".format(hostname))
+            print("Files of current hostname {}:".format(hostname))
             print(files)
+
         elif func == 'ping':
+            hostname = command.split()[1]
             ping_client(hostname)
+
         else:
             print("Invalid argument.")
 
 
 def handle_client_connection(conn, addr):
     '''
-    The receiving message must be in the following format:
+    The receiving cmd must be in the following format:
     <function> <fname> where:
     <function> can be: ['publish', 'fetch']
     <fname> can be any filename
