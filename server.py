@@ -6,7 +6,7 @@ IP = "127.0.0.1"
 PORT = 4456
 SIZE = 1024
 FORMAT = "utf"
-HEADER = 1024
+
 client_list = {}    # Store client id with respective address (id - connection)
 file_list = {}      # Store list of client's id that have corresponding file (file - [id])
 blue_lock = threading.Lock()
@@ -17,12 +17,12 @@ def remove_client(client_id):
         if client_id in value:
             value.remove(client_id)
 
-def ping_client(client_id,connection):
+def ping_client(client_id):
     message = 'ping' + " " + str(client_id)
     send_message(client_id, message)
 
     time.sleep(0.1) # wait time for client to respond
-    message_length = connection.recv(HEADER).decode(FORMAT) 
+    message_length = connection.recv(SIZE).decode(FORMAT) 
     if message_length:
         message_length = int(message_length)
         message = connection.recv(message_length).decode(FORMAT)
@@ -67,7 +67,7 @@ def send_message(client_id, message = ""):
     conn.send(message)
 
 
-def handle_fetch_file(receiver_id, fname,connection):
+def handle_fetch_file(receiver_id, fname):
     '''
     The client's message that used for dertermine source client
     must follow this format:
@@ -90,7 +90,7 @@ def handle_fetch_file(receiver_id, fname,connection):
         send_message(receiver_id, "invalid fetchfile")
     else:
         while True:
-            message_length = connection.recv(HEADER).decode(FORMAT) 
+            message_length = connection.recv(SIZE).decode(FORMAT) 
             if message_length:
                 message_length = int(message_length)
                 sender_id = connection.recv(message_length).decode(FORMAT)
@@ -106,8 +106,8 @@ def handle_fetch_file(receiver_id, fname,connection):
         send_message(sender_id, re_message)
 
 
-def handle_upload_file(client_id, fname,lname):
-    file_list[fname] = file_list.get(fname, []) + [(client_id, lname)]
+def handle_upload_file(client_id, fname):
+    file_list[fname] = file_list.get(fname, []) + [client_id]
     print("Client {} successfully upload file {}".format(client_id, fname))
 
 
@@ -135,7 +135,7 @@ def handle_commands():
             print("Invalid argument.")
 
 
-def handle_client_connection(connection, addr):
+def handle_client_connection(conn, addr):
     '''
     The receiving cmd must be in the following format:
     <function> <fname> where:
@@ -146,20 +146,20 @@ def handle_client_connection(connection, addr):
         fetch test.txt
     '''
     with blue_lock:
-        client_list[addr] = connection
+        client_list[addr] = conn
 
     while True:
-        message_length = connection.recv(HEADER).decode(FORMAT) # convert bytes format -> string 
+        message_length = conn.recv(SIZE).decode(FORMAT) # convert bytes format -> string 
         if message_length:
             
             # Received a message's length (message_length != 0)
             message_length = int(message_length)
-            message = connection.recv(message_length).decode(FORMAT)
+            message = conn.recv(message_length).decode(FORMAT)
             func, fname = message.split()
             if func == 'publish':
-                handle_upload_file(find_addr(connection), fname)
+                handle_upload_file(addr, fname)
             elif func == 'fetch':
-                handle_fetch_file(find_addr(connection), fname)    
+                handle_fetch_file(addr, fname)    
     
 
 def main():
@@ -180,10 +180,10 @@ def main():
     command_thread.start()
     
     while True:
-        connection, addr = server.accept()
+        conn, addr = server.accept()
 
         # Create a new thread for each client
-        client_thread = threading.Thread(target=handle_client_connection, args=(connection, addr))
+        client_thread = threading.Thread(target=handle_client_connection, args=(conn, addr))
         client_thread.start()
 
 
