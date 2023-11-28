@@ -6,7 +6,7 @@ IP = "127.0.0.1"
 PORT = 4456
 SIZE = 1024
 FORMAT = "utf"
-
+HEADER = 1024
 client_list = {}    # Store client id with respective address (id - connection)
 file_list = {}      # Store list of client's id that have corresponding file (file - [id])
 blue_lock = threading.Lock()
@@ -145,7 +145,7 @@ def handle_client_connection(conn, addr):
         publish test.txt
         fetch test.txt
     '''
-    with bluelock:
+    with blue_lock:
         client_list[addr] = conn
 
     while True:
