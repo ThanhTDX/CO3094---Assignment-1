@@ -5,7 +5,7 @@ import threading
 IP = "127.0.0.1"
 PORT = 4456
 SIZE = 1024
-FORMAT = "utf"
+FORMAT = "utf-8"
 
 client_list = {}    # Store client id with respective address (id - connection)
 file_list = {}      # Store list of client's id that have corresponding file (file - [id])
@@ -155,37 +155,47 @@ def handle_client_connection(conn, addr):
         message_length = conn.recv(SIZE).decode(FORMAT) # convert bytes format -> string 
         if message_length:
             
-            # Received a message's length (message_length != 0)
-            message_length = int(message_length)
-            message = conn.recv(message_length).decode(FORMAT)
-            func, fname = message.split()
-            if func == 'publish':
+            # # Received a message's length (message_length != 0)
+            # message_length = int(message_length)
+            # message = conn.recv(message_length).decode(FORMAT)
+            func, fname = message_length.split()
+            if func.lower() == 'publish':
                 handle_upload_file(addr, fname)
-            elif func == 'fetch':
+            elif func.lower() == 'fetch':
                 handle_fetch_file(addr, fname)    
     
 
 def main():
-    '''
-    Please note that the sending message always begin with an
-    empty byte string as notification
-    Example can be seen in ping_client()'s implementation
-
-    '''
+    # Text
     print("[STARTING] Server is starting.\n")
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((IP, PORT))
-    server.listen()
+    # Server creates a socket with static IP and PORT for connection 
+    # IP = 127.0.0.1, PORT = 4456
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((IP, PORT))
+
+    # Limits listening clients to 20
+    server_socket.listen(20)
+
+    # Text
     print("[LISTENING] Server is waiting for clients.")
 
+    # A thread is created for server's self command (ping, discover)
     command_thread = threading.Thread(target=handle_commands)
     command_thread.start()
     
     while True:
-        conn, addr = server.accept()
+        conn, addr = server_socket.accept()
+        # When a client connects, server will notify in terminal
+        print("User ", conn.getpeername(), " connected")
+        # send back client's id (including ip and current port)
+        conn.send(str(addr).encode(FORMAT))
+        # Client will send their name and their 2nd server's port (i hate pier-to-pier)
+        username = conn.recv(SIZE).decode(FORMAT)
+        client_server_port = conn.recv(SIZE).decode(FORMAT)
+        # server will save in client_list which port is being connected to who
 
-        # Create a new thread for each client
+        # and create a new thread for the client (publish, fetch)
         client_thread = threading.Thread(target=handle_client_connection, args=(conn, addr))
         client_thread.start()
 

@@ -1,26 +1,29 @@
 import socket
 import os
 import threading
-from client_util import *
 
-from p2p import *
-
-'''
-Client Configuration
-''' 
-CLIENT_NAME = input("Enter your name: ")
+# Client Configuration
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 4456
 
 CLIENT_SERVER_IP = "127.0.0.1"
-CLIENT_SERVER_PORT = 12346
+CLIENT_SERVER_PORT = 10000
 
-CLIENT_ID = "127.0.0.1:12346"
-BYTE = 1024
-FORMAT = 'utf-8'
+CLIENT_ID = "127.0.0.1:10000"
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((SERVER_IP, SERVER_PORT))
+# Function to send requests to the server
+def send_request(request, client_socket):
+    client_socket.send(request.encode())
+    response = client_socket.recv(1024).decode()
+    print("Server response:", response)
+    return response
+
+# Main thread line:
+#   _main_
+#       -> listen_for_server
+#       -> Thread : st
+# publish abc xyz
+
 
 def handle_incoming_request(client_socket):
     while True:
@@ -31,7 +34,7 @@ def handle_incoming_request(client_socket):
         parts = data.split()
         if parts[0] == "FETCH":
             # Handle FETCH request here
-            file_path = CLIENT_NAME + "/" + parts[1]
+            file_path = "client_repository/" + parts[1]
             send_file(client_socket, file_path)
             pass
         if parts[0] == "PING":
@@ -43,18 +46,12 @@ def handle_incoming_request(client_socket):
     client_socket.close()
 
 def listen_for_server():
-    # Client connects to the server and starts sending request
-    # but before that they have to process their request (publish, fetch)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((SERVER_IP, SERVER_PORT))
     while True:
         command = input("Enter a command (publish, fetch): ").strip().split()
         if command[0] == "publish":
             # Implement the logic to publish a file here
-            # client_id = 127.0.0.1:12346
-            # command[1] : client file
-            # command[2] : end result file
-            '''
-                CLIENT_ID is redundant, the end result it will be terminated
-            '''
             try:
                 publish_file(CLIENT_ID, command[1], command[2], client_socket)
             except Exception as e:
@@ -63,7 +60,7 @@ def listen_for_server():
         elif command[0] == "fetch":
             # Fetch client has file
             try:
-                target_clients = fetch_file_locations(command[1])
+                target_clients = fetch_file_locations(command[1], client_socket)
                 if(target_clients == "none"): raise Exception("file not founed")
                 target_clients = target_clients.split(' ')
                 fetch_handler = threading.Thread(target=fetch_and_receive_file, args=(command[1], target_clients[0]))
@@ -74,7 +71,14 @@ def listen_for_server():
         else:
             print("Invalid command. Supported commands: CONNECT, PUBLISH, FETCH")
 
-def fetch_and_receive_file(file_name, client_id, client_socket):
+def send_file(client_socket, file_path):
+    with open(file_path, 'rb') as file:
+        data = file.read(1024)  # Read 1 KB at a time (adjust as needed)
+        while data:
+            client_socket.send(data)
+            data = file.read(1024)
+
+def fetch_and_receive_file(file_name, client_id):
     ip_address, port = client_id.split(':')
     port = int(port)
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,7 +87,7 @@ def fetch_and_receive_file(file_name, client_id, client_socket):
     fetch_request = f"FETCH {file_name}"
     client_socket.send(fetch_request.encode())
 
-    repository_path = CLIENT_NAME + "/"
+    repository_path = "client_repository/"
     repository_path = os.path.join(repository_path, file_name)
     os.makedirs(os.path.dirname(repository_path), exist_ok=True)
     with open(repository_path, 'wb') as file:
@@ -104,13 +108,9 @@ def publish_file(client_id, lname, fname, client_socket):
     # Check if the file exists in the specified local path (lname)
     if os.path.exists(lname):
         # Copy the file to the client's repository (you need to define a path for the repository)
-        # This will create a folder with name CLIENT_NAME
-        repository_path = CLIENT_NAME + "/"
+        repository_path = "client_repository/"
         os.makedirs(repository_path, exist_ok=True)
-
-        # The existing or newly created folder directory will merge with the file, making it in the directory
         target_file_path = os.path.join(repository_path, fname)
-
         with open(lname, "rb") as source_file, open(target_file_path, "wb") as target_file:
             target_file.write(source_file.read())
         
@@ -120,31 +120,36 @@ def publish_file(client_id, lname, fname, client_socket):
     else:
         print("The specified file does not exist in the local path.")
 
+# Function to fetch target clients for a file
+def fetch_file_locations(file_name, client_socket):
+    request = f"FETCHCLIENT {file_name}"
+    return send_request(request, client_socket)
+
+# Function to fetch a file
+def fetch_file(file_name):
+    request = f"FETCHFILE {file_name}"
+    send_request(request)
+
+# Function to inform the server about a fetched file
+def inform_fetched_file(client_id, file_name):
+    request = f"INFORM {client_id} {file_name}"
+    send_request(request)
+
 def main():
-    # Client create a Thread to listen_for_server
-    connect_thread = threading.Thread(target=listen_for_server)
-    connect_thread.start()
+    server_listener = threading.Thread(target=listen_for_server)
+    server_listener.start()
+    request_handling_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # # Server send client's id information, including its current port
-    # inaddr = client_socket.recv(BYTE).decode(FORMAT)
-    # connect_port = retrieve_connect_port(inaddr)
+    request_handling_socket.bind((CLIENT_SERVER_IP, CLIENT_SERVER_PORT))  # Change the port as needed
+    # Currect SERVER_IP : 127.0.0.1
+    # Current SERVER_PORT : 4456
 
-    # 2nd socket for client host (file sharing)
-    client_host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # https://stackoverflow.com/questions/1365265/on-localhost-how-do-i-pick-a-free-port-number
-    # OS will create a random free port for client to bind
-    client_host_socket.bind((CLIENT_SERVER_IP, 0))  
-    # limit to 5 concurrent users
-    client_host_socket.listen(5)
-
-    # client send their name and 2nd server port to server
-    client_socket.send(CLIENT_NAME.encode())
-    client_socket.send(str(client_host_socket.getsockname()[1]).encode())
-
+    request_handling_socket.listen(5)
+    print("Listening for incoming requests on ", CLIENT_ID)
     while True:
-        conn, addr = client_host_socket.accept()
-        print(f"Accepted connection from {conn.getpeername()[0]}:{conn.getpeername()[1]}")
-        request_handler = threading.Thread(target=handle_incoming_request, args=(conn, addr))
+        client_socket, addr = request_handling_socket.accept()
+        print(f"Accepted connection from {addr[0]}:{addr[1]}")
+        request_handler = threading.Thread(target=handle_incoming_request, args=(client_socket,))
         request_handler.start()
 
 # Start the main thread to listen for incoming connections from other clients
