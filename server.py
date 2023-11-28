@@ -20,12 +20,13 @@ def remove_client(client_id):
 def ping_client(client_id):
     message = 'ping' + " " + str(client_id)
     send_message(client_id, message)
+    conn = client_list[client_id]
 
     time.sleep(0.1) # wait time for client to respond
-    message_length = connection.recv(SIZE).decode(FORMAT) 
+    message_length = conn.recv(SIZE).decode(FORMAT) 
     if message_length:
         message_length = int(message_length)
-        message = connection.recv(message_length).decode(FORMAT)
+        message = conn.recv(message_length).decode(FORMAT)
         print(message)
         return True
     else:
@@ -85,15 +86,17 @@ def handle_fetch_file(receiver_id, fname):
     Example:
         ('192.168.1.105', 62563)
     '''
+    conn = client_list[receiver_id]
     valid_sender = send_avail_sender_list(receiver_id, fname)
     if not valid_sender:
         send_message(receiver_id, "invalid fetchfile")
     else:
         while True:
-            message_length = connection.recv(SIZE).decode(FORMAT) 
+            # Get message from fetching client
+            message_length = conn.recv(SIZE).decode(FORMAT) 
             if message_length:
                 message_length = int(message_length)
-                sender_id = connection.recv(message_length).decode(FORMAT)
+                sender_id = conn.recv(message_length).decode(FORMAT)
                 if check_valid_sender(sender_id, fname):
                     send_message(receiver_id, "valid sender_id")
                     break
