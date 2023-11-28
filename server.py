@@ -42,7 +42,6 @@ def send_avail_sender_list(receiver_id, fname):
         [('192.168.1.105', 62563), ('192.168.1.105', 62564)]
         []
     '''
-    conn = client_list[receiver_id]
     sender_list = file_list.get(fname, [])
     send_message(receiver_id, str(sender_list))
     return (len(sender_list) > 0)
