@@ -17,7 +17,7 @@ def remove_client(client_id):
         if client_id in value:
             value.remove(client_id)
 
-def ping_client(client_id):
+def ping_client(client_id,connection):
     message = 'ping' + " " + str(client_id)
     send_message(client_id, message)
 
@@ -67,7 +67,7 @@ def send_message(client_id, message = ""):
     conn.send(message)
 
 
-def handle_fetch_file(receiver_id, fname):
+def handle_fetch_file(receiver_id, fname,connection):
     '''
     The client's message that used for dertermine source client
     must follow this format:
@@ -106,7 +106,7 @@ def handle_fetch_file(receiver_id, fname):
         send_message(sender_id, re_message)
 
 
-def handle_upload_file(client_id, fname):
+def handle_upload_file(client_id, fname,lname):
     file_list[fname] = file_list.get(fname, []) + [(client_id, lname)]
     print("Client {} successfully upload file {}".format(client_id, fname))
 
@@ -135,7 +135,7 @@ def handle_commands():
             print("Invalid argument.")
 
 
-def handle_client_connection(conn, addr):
+def handle_client_connection(connection, addr):
     '''
     The receiving cmd must be in the following format:
     <function> <fname> where:
@@ -146,7 +146,7 @@ def handle_client_connection(conn, addr):
         fetch test.txt
     '''
     with blue_lock:
-        client_list[addr] = conn
+        client_list[addr] = connection
 
     while True:
         message_length = connection.recv(HEADER).decode(FORMAT) # convert bytes format -> string 
@@ -180,10 +180,10 @@ def main():
     command_thread.start()
     
     while True:
-        conn, addr = server.accept()
+        connection, addr = server.accept()
 
         # Create a new thread for each client
-        client_thread = threading.Thread(target=handle_client_connection, args=(conn, addr))
+        client_thread = threading.Thread(target=handle_client_connection, args=(connection, addr))
         client_thread.start()
 
 
