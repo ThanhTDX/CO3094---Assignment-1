@@ -8,7 +8,7 @@ SIZE = 1024
 FORMAT = "utf-8"
 
 client_list = {}    # store dict of id with format {port} : (username, ip, client_server_port)
-file_list = {}      # Store list of client's id that have corresponding file (file - [name, client_server_port])
+file_list = {}      # Store list of client's id that have corresponding file (file - [(name, client_server_port)])
 blue_lock = threading.Lock()
 
 # Func to send message to client
@@ -31,7 +31,20 @@ def remove_client(client_id):
     # for key, value in file_list.items():
     #     if client_id in value:
     #         value.remove(client_id)
-    pass
+
+    client_name = client_id[0]
+
+    # Create new list and overwrite old client_list, removing keys with client_id in it
+    client_list = { key : value
+                    for key, value in client_list.items()
+                    if value != client_id }
+    
+    # Pop client if they're in file key in 
+    for file, client_with_file in file_list.items():
+        for client in client_with_file:
+            if client[0] == client_name:
+                client_with_file.pop(client)
+
 
 # Function to return client's name, port and client_server_port
 def get_client_information(name):
@@ -81,10 +94,9 @@ def ping_client(hostname):
     # If client doesn't respond remove client
     if not data:
         remove_client((username, user_ip, client_server_port))
-        
-    connect_socket.close()
-    
 
+    # End connection
+    connect_socket.close()
 
 def send_avail_sender_list(receiver_id, fname):
     '''
@@ -98,7 +110,6 @@ def send_avail_sender_list(receiver_id, fname):
     sender_list = file_list.get(fname, [])
     send_message(receiver_id, str(sender_list))
     return (len(sender_list) > 0)
-        
 
 def check_valid_sender(client_id, fname):
     sender_list = file_list[fname]
@@ -106,9 +117,6 @@ def check_valid_sender(client_id, fname):
         return True
     else:
         return False
-
-
-
 
 def handle_fetch_file(receiver_id, fname):
     '''
@@ -162,6 +170,7 @@ def handle_publish_file(client_conn, file_name):
 
     file_list[file_name] = file_list.get(file_name, []) + [(username, client_server_port)]
 
+    send_message("Success", client_conn)
     print(f"Client {username} upload file {file_name}")
 
 # Function for server to discover and ping clients
@@ -181,7 +190,11 @@ def handle_commands():
                 #         if hostname == client_id:
                 #             files.append(fname)
                 #             break
-                files =  [k for k, v in file_list.items() if v[0] == hostname]
+                files =  []
+                for file_name, list_name in file_list.items():
+                    for client in list_name:
+                        if client[0] == hostname:
+                            files.append(file_name)
                 print(f"Files of current hostname {hostname}:")
                 print(files)
             except Exception as e:
@@ -192,10 +205,6 @@ def handle_commands():
                 ping_client(hostname)
             except Exception as e:
                 print(f"Error pinging user: {e} ")
-
-        elif func == 'quit':
-            break
-
 
 def handle_client_connection(client_conn, client_addr):
     '''
@@ -262,8 +271,8 @@ def main():
     while True:
         client_conn, client_addr = server_socket.accept()
 
-        # send back client's id (including ip and current port)
-        client_conn.send(str(client_addr).encode(FORMAT))
+        # # send back client's id (including ip and current port)
+        # client_conn.send(str(client_addr).encode(FORMAT))
 
         client_ip = client_conn.getpeername()[0]
         client_port = client_conn.getpeername()[1]

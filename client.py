@@ -65,7 +65,7 @@ def listen_for_server():
 
             except Exception as e:
                 print(f"Error requesting to fetch file: {e}")
-        if command[0] == "quit":    
+        elif command[0] == "quit":    
             break
         else:
             print("Invalid command. Supported commands: CONNECT, PUBLISH, FETCH")
@@ -120,7 +120,11 @@ def publish_file(lname, fname):
         # Send a "PUBLISH" request to inform the server
 
         request = f"PUBLISH {fname}"
-        send_request(request)
+        while True:
+            recv_msg = send_request(request)
+            if recv_msg.upper() == "SUCCESS":
+                break
+                
         print (f"Publish {fname} succesful!")
     else:
         print("The specified file does not exist in the local path.")
@@ -134,13 +138,7 @@ def main():
     # inaddr = client_socket.recv(BYTE).decode(FORMAT)
     # connect_port = retrieve_connect_port(inaddr)
 
-    # 2nd socket for client host (file sharing)
-    client_host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # https://stackoverflow.com/questions/1365265/on-localhost-how-do-i-pick-a-free-port-number
-    # OS will create a random free port for client to bind
-    client_host_socket.bind((CLIENT_SERVER_IP, 0))  
-    # limit to 5 concurrent users
-    client_host_socket.listen(5)
+
 
     # client send their name and 2nd server port to server
     client_socket.send(CLIENT_NAME.encode())
