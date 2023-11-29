@@ -7,12 +7,12 @@ def handle_incoming_request(conn, addr):
             break
         # Process and handle the request from the other client
         parts = data.split()
-        if parts[0] == "FETCH":
+        if parts[0].upper() == "FETCH":
             # Handle FETCH request here
             file_path = CLIENT_NAME + "/" + parts[1]
             send_file(conn, file_path)
             pass
-        if parts[0] == "PING":
+        if parts[0].upper() == "PING":
             # Handle PING request here
             # Check for this while loop working
             conn.send("PONG".encode())
@@ -65,7 +65,8 @@ def listen_for_server():
 
             except Exception as e:
                 print(f"Error requesting to fetch file: {e}")
-            
+        if command[0] == "quit":    
+            break
         else:
             print("Invalid command. Supported commands: CONNECT, PUBLISH, FETCH")
 

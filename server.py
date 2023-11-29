@@ -8,7 +8,7 @@ SIZE = 1024
 FORMAT = "utf-8"
 
 client_list = {}    # store dict of id with format {port} : (username, ip, client_server_port)
-file_list = {}      # Store list of client's id that have corresponding file (file - [id])
+file_list = {}      # Store list of client's id that have corresponding file (file - [name, client_server_port])
 blue_lock = threading.Lock()
 
 # Func to send message to client
@@ -25,27 +25,65 @@ def send_message(message, conn):
     # conn.send(message)
     conn.send(message.encode())
 
+# Remove client_list and all instance of file_list in server
 def remove_client(client_id):
-    del client_list[client_id]
-    for key, value in file_list.items():
-        if client_id in value:
-            value.remove(client_id)
+    # del client_list[client_id]
+    # for key, value in file_list.items():
+    #     if client_id in value:
+    #         value.remove(client_id)
+    pass
 
-def ping_client(client_id):
-    message = 'ping' + " " + str(client_id)
-    send_message(client_id, message)
-    conn = client_list[client_id]
-
-    time.sleep(0.1) # wait time for client to respond
-    message_length = conn.recv(SIZE).decode(FORMAT) 
-    if message_length:
-        message_length = int(message_length)
-        message = conn.recv(message_length).decode(FORMAT)
-        print(message)
-        return True
+# Function to return client's name, port and client_server_port
+def get_client_information(name):
+    found_client = False
+    for client in client_list:
+        if client[0] == name:
+            found_client = True
+            username, ip, client_server_port = client
+    if not found_client:
+        return None
     else:
-        remove_client(client_id)
-        return False
+        return (username, ip, client_server_port)
+
+
+def ping_client(hostname):
+    # message = 'ping' + " " + str(client_id)
+    # send_message(client_id, message)
+    # conn = client_list[client_id]
+
+    # time.sleep(0.1) # wait time for client to respond
+    # message_length = conn.recv(SIZE).decode(FORMAT) 
+    # if message_length:
+    #     message_length = int(message_length)
+    #     message = conn.recv(message_length).decode(FORMAT)
+    #     print(message)
+    #     return True
+    # else:
+    #     remove_client(client_id)
+    #     return False
+
+    # Find the client
+    username, user_ip, client_server_port = get_client_information(hostname)
+    # If client is not found print error and return
+    if not username:
+        print(f"{hostname} is not in the client list.")
+        return
+
+    # Server will create a client socket to connect to the clien_server_port user has been opened
+    connect_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    connect_socket.connect(user_ip, client_server_port)
+
+    # Ping and wait
+    connect_socket.send("Ping")
+    time.sleep(15)
+    data = connect_socket.recv(1024).decode()
+
+    # If client doesn't respond remove client
+    if not data:
+        remove_client((username, user_ip, client_server_port))
+        
+    connect_socket.close()
+    
 
 
 def send_avail_sender_list(receiver_id, fname):
@@ -144,7 +182,7 @@ def handle_commands():
                 #             files.append(fname)
                 #             break
                 files =  [k for k, v in file_list.items() if v[0] == hostname]
-                print(f"Files of current hostname {hostname}")
+                print(f"Files of current hostname {hostname}:")
                 print(files)
             except Exception as e:
                 print(f"Error discovering user: {e} ")
@@ -195,7 +233,9 @@ def handle_client_connection(client_conn, client_addr):
                         handle_fetch_file(client_conn, fname)  
                     except Exception as e:
                         print(f"Error while fetching: {e}")
+    # Handle exception, remove_client and disconnect them
     except Exception as e:
+        # remove_client(client_list[client_conn.getpeername()[1]])
         client_conn.close()
                   
     
