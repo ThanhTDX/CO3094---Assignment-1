@@ -7,9 +7,23 @@ PORT = 4456
 SIZE = 1024
 FORMAT = "utf-8"
 
-client_list = {}    # Store client id with respective address (id - connection)
+client_list = {}    # store dict of id with format {port} : (username, ip, client_server_port)
 file_list = {}      # Store list of client's id that have corresponding file (file - [id])
 blue_lock = threading.Lock()
+
+# Func to send message to client
+def send_message(message, conn):
+    # '''
+    # Send message to specific client
+    # '''
+    # message_length = len(message)
+    # send_length = str(message_length).encode(FORMAT)
+    # send_length+= b' '*(SIZE-len(send_length))
+
+    # conn = client_list[client_id]
+    # conn.send(send_length)
+    # conn.send(message)
+    conn.send(message.encode())
 
 def remove_client(client_id):
     del client_list[client_id]
@@ -55,17 +69,7 @@ def check_valid_sender(client_id, fname):
     else:
         return False
 
-def send_message(client_id, message = ""):
-    '''
-    Send message to specific client
-    '''
-    message_length = len(message)
-    send_length = str(message_length).encode(FORMAT)
-    send_length+= b' '*(SIZE-len(send_length))
 
-    conn = client_list[client_id]
-    conn.send(send_length)
-    conn.send(message)
 
 
 def handle_fetch_file(receiver_id, fname):
@@ -109,36 +113,53 @@ def handle_fetch_file(receiver_id, fname):
         send_message(sender_id, re_message)
 
 
-def handle_upload_file(client_id, fname):
-    file_list[fname] = file_list.get(fname, []) + [client_id]
-    print("Client {} successfully upload file {}".format(client_id, fname))
+# Function for server when client publish file
+def handle_publish_file(client_conn, file_name):
+    # file_list saves all usernames and their client_server_port
+    # eg: file_list["a.txt"] saves [(thanh, 4402), (an, 3054), etc.]
 
+    # get username and its client_server_port from client_conn
+    username = client_list[client_conn.getpeername()[1]][0]
+    client_server_port = client_list[client_conn.getpeername()[1]][2]
 
+    file_list[file_name] = file_list.get(file_name, []) + [(username, client_server_port)]
+
+    print(f"Client {username} upload file {file_name}")
+
+# Function for server to discover and ping clients
 def handle_commands():
     while True:
+        # func : action
+        # hostname : username
         command = input()
-        func = command.split()[0]
+        func, hostname = command.split()
 
+        # Discover client 
         if func == 'discover':
-            hostname = command.split()[1]
-            files = []
-            for fname, client_list in file_list.items():
-                for client_id in client_list:
-                    if hostname == client_id:
-                        files.append(fname)
-                        break
-            print("Files of current hostname {}:".format(hostname))
-            print(files)
-
+            try:
+                # files = []
+                # for fname, client_list in file_list.items():
+                #     for client_id in client_list:
+                #         if hostname == client_id:
+                #             files.append(fname)
+                #             break
+                files =  [k for k, v in file_list.items() if v[0] == hostname]
+                print(f"Files of current hostname {hostname}")
+                print(files)
+            except Exception as e:
+                print(f"Error discovering user: {e} ")
+        
         elif func == 'ping':
-            hostname = command.split()[1]
-            ping_client(hostname)
+            try:
+                ping_client(hostname)
+            except Exception as e:
+                print(f"Error pinging user: {e} ")
 
-        else:
-            print("Invalid argument.")
+        elif func == 'quit':
+            break
 
 
-def handle_client_connection(conn, addr):
+def handle_client_connection(client_conn, client_addr):
     '''
     The receiving cmd must be in the following format:
     <function> <fname> where:
@@ -148,21 +169,35 @@ def handle_client_connection(conn, addr):
         publish test.txt
         fetch test.txt
     '''
-    with blue_lock:
-        client_list[addr] = conn
 
-    while True:
-        message_length = conn.recv(SIZE).decode(FORMAT) # convert bytes format -> string 
-        if message_length:
-            
-            # # Received a message's length (message_length != 0)
-            # message_length = int(message_length)
-            # message = conn.recv(message_length).decode(FORMAT)
-            func, fname = message_length.split()
-            if func.lower() == 'publish':
-                handle_upload_file(addr, fname)
-            elif func.lower() == 'fetch':
-                handle_fetch_file(addr, fname)    
+    # with blue_lock:
+    #     client_list[addr] = conn
+
+    # Client only send 2 request
+    # publish filename
+    # fetch filename
+    try:
+        while True:
+            message_length = client_conn.recv(SIZE).decode(FORMAT) 
+            if message_length:
+                
+                # # Received a message's length (message_length != 0)
+                # message_length = int(message_length)
+                # message = conn.recv(message_length).decode(FORMAT)
+                func, fname = message_length.split()
+                if func.lower() == 'publish':
+                    try:
+                        handle_publish_file(client_conn, fname)
+                    except Exception as e:
+                        print(f"Error while publishing: {e}")
+                elif func.lower() == 'fetch':
+                    try:
+                        handle_fetch_file(client_conn, fname)  
+                    except Exception as e:
+                        print(f"Error while fetching: {e}")
+    except Exception as e:
+        client_conn.close()
+                  
     
 
 def main():
@@ -185,18 +220,29 @@ def main():
     command_thread.start()
     
     while True:
-        conn, addr = server_socket.accept()
-        # When a client connects, server will notify in terminal
-        print("User ", conn.getpeername(), " connected")
+        client_conn, client_addr = server_socket.accept()
+
         # send back client's id (including ip and current port)
-        conn.send(str(addr).encode(FORMAT))
-        # Client will send their name and their 2nd server's port (i hate pier-to-pier)
-        username = conn.recv(SIZE).decode(FORMAT)
-        client_server_port = conn.recv(SIZE).decode(FORMAT)
+        client_conn.send(str(client_addr).encode(FORMAT))
+
+        client_ip = client_conn.getpeername()[0]
+        client_port = client_conn.getpeername()[1]
+
+        # Client send their name and 2nd server's port (i hate pier-to-pier)
+        username = client_conn.recv(SIZE).decode(FORMAT)
+        client_server_port = client_conn.recv(SIZE).decode(FORMAT)
+
         # server will save in client_list which port is being connected to who
+        # Eg: user thanh is connected with ip 127.0.0.1, port 13456 and client_server_port 4402
+        # then client_list[13456] and client_list[4402] stores (thanh, 127.0.0.1, 4402)
+        client_list[client_port] = (username, client_port, client_server_port)
+        client_list[client_server_port] = (username, client_port, client_server_port)
+
+        # finally server will notify in terminal
+        print(f"User {username}, IP: {client_ip}, Port: {client_port} connected.")
 
         # and create a new thread for the client (publish, fetch)
-        client_thread = threading.Thread(target=handle_client_connection, args=(conn, addr))
+        client_thread = threading.Thread(target=handle_client_connection, args=(client_conn, client_addr))
         client_thread.start()
 
 
