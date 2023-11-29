@@ -13,7 +13,7 @@ blue_lock = threading.Lock()
 
 def remove_client(client_id):
     del client_list[client_id]
-    for key, value in file_list.items():
+    for _, value in file_list.items():
         if client_id in value:
             value.remove(client_id)
 
