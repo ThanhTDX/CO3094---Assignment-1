@@ -62,19 +62,24 @@ def fetch_file(file_name):
     
     # ask user which user they want to get file from
     while True:
+        loop_break = False
+        client_found = False
         sender_client = input("Which user do you want to fetch? (type \"Quit\" to quit.)")
         # if user want to quit
         if sender_client.lower() == "quit":
-                break
+            break
         for client in client_list:
             # if client is found then thread is open to get file
             if sender_client.lower() == client[0]:
                 fetch_handler = threading.Thread(target=fetch_and_receive_file, args=(file_name, client))
                 fetch_handler.start()
+                loop_break = True
+                client_found = True
                 break
-            # else nothing is found and return back
-            else:
-                print("User not found, try again.\n")
+        if not client_found:
+            print("User not found, try again.\n")
+        if loop_break:
+            break
 
 # Function for client to connect to a different client and ask for file
 def fetch_and_receive_file(file_name, client_server):
