@@ -1,6 +1,7 @@
 import socket
 import os
 import threading
+import json
 
 '''
 Client Configuration
@@ -29,6 +30,7 @@ client_host_socket.bind((CLIENT_SERVER_IP, 0))
 client_host_socket.listen(5)
 
 # Function to send requests to the server
+
 def send_request(request):
     client_socket.send(request.encode())
     response = client_socket.recv(1024).decode(FORMAT)

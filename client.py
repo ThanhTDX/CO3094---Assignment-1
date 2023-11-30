@@ -55,21 +55,22 @@ def fetch_file(file_name):
         print("No users have the file.")
         return
     # Print only client name for user to see
+    client_list = json.loads(target_clients)
     print("Currently available client:\n")
-    for client in target_clients:
+    for client in client_list:
         print(client[0], '\n')
     
     # ask user which user they want to get file from
     while True:
         sender_client = input("Which user do you want to fetch? (type \"Quit\" to quit.)")
-        for client in target_clients:
+        # if user want to quit
+        if sender_client.lower() == "quit":
+                break
+        for client in client_list:
             # if client is found then thread is open to get file
             if sender_client.lower() == client[0]:
                 fetch_handler = threading.Thread(target=fetch_and_receive_file, args=(file_name, client))
                 fetch_handler.start()
-                break
-            # if user want to quit
-            if sender_client.lower() == "quit":
                 break
             # else nothing is found and return back
             else:
@@ -78,15 +79,15 @@ def fetch_file(file_name):
 # Function for client to connect to a different client and ask for file
 def fetch_and_receive_file(file_name, client_server):
     try:
-        ip_address = client_server[0]
+        ip_address = CLIENT_SERVER_IP 
         port = int(client_server[1])
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((ip_address, port))
-        client_socket.settimeout(5)
+        client_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_client_socket.connect((ip_address, port))
+        client_client_socket.settimeout(5)
         
         # Send request name FETCH for handle_incoming_request
         fetch_request = f"FETCH {file_name}"
-        client_socket.send(fetch_request.encode())
+        client_client_socket.send(fetch_request.encode())
 
         # Create repository with username if not existed
         repository_path = CLIENT_NAME + "/"
@@ -95,14 +96,14 @@ def fetch_and_receive_file(file_name, client_server):
         
         with open(repository_path, 'wb') as file:
             while True:
-                data = client_socket.recv(1024)  # Receive 1 KB at a time (adjust as needed)
+                data = client_client_socket.recv(1024)  # Receive 1 KB at a time (adjust as needed)
                 if not data:
                     break
                 file.write(data)
 
         # inform_fetched_file(file_name, client_server)
         print("FETCH SUCCESSFUL")
-    except socket.timeout as e:
+    except socket.error as e:
         print(f"Error on socket while fetching file: {e}")
         return
     except Exception as e:

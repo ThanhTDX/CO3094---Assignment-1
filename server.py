@@ -1,6 +1,7 @@
 import socket
 import time
 import threading
+import json
 
 IP = "127.0.0.1"
 PORT = 4456
@@ -13,6 +14,15 @@ client_list = {}    # store dict of id with format {port} : (username, ip, clien
 file_list = {}      # Store list of client's id that have corresponding file (file - [(name, client_server_port)])
 blue_lock = threading.Lock()
 
+
+# # Automatic mass client ping to check connection
+# def mass_ping_client():
+#     while True:
+#         time.sleep(15)
+#         if client_list:
+#             for key, value in client_list.items():
+#                 ping_thread = threading.Thread(target=ping_client,args=value[0])
+#                 ping_thread.start()
 # Func to send message to client
 def send_message(message, conn):
     # '''
@@ -56,6 +66,7 @@ def remove_client(client_id):
 
     file_list.clear() 
     file_list.update(new_file_list)
+    print(f"User {client_name} has been removed.")
 
 
 # Function to return client's name, ip and client_server_port
@@ -127,7 +138,7 @@ def ping_client(hostname):
             print(f"User {username} still connecting.")
         # End connection
         connect_socket.close()
-    except socket.timeout as e:
+    except socket.error as e:
         remove_client((username, user_ip, client_server_port))
         return
     except Exception as e:
@@ -208,9 +219,10 @@ def handle_fetch_file(client_conn, file_name):
     if not list_name :
         client_conn.send("none".encode()) 
     else:
-        send_msg = ""
-        for name in list_name:
-            client_conn.send(list_name.encode())
+        # This line of code encapsulates my insanity solving this
+        # https://stackoverflow.com/questions/17796446/convert-a-list-to-a-string-and-back
+        send_msg = json.dumps(list_name)
+        client_conn.send(send_msg.encode())
 
 
 # Function for server when client publish file
@@ -322,6 +334,10 @@ def main():
     # A thread is created for server's self command (ping, discover)
     command_thread = threading.Thread(target=handle_commands)
     command_thread.start()
+
+    # # A 3rd thread to automatically ping all clients to check for connection
+    # ping_thread = threading.Thread(target=mass_ping_client)
+    # ping_thread.start()
     
     while True:
         client_conn, client_addr = server_socket.accept()
