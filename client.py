@@ -99,6 +99,8 @@ def fetch_and_receive_file(file_name, client_server):
         repository_path = os.path.join(repository_path, file_name)
         os.makedirs(os.path.dirname(repository_path), exist_ok=True)
         
+        print("FETCH SUCCESSFUL")
+        
         with open(repository_path, 'wb') as file:
             while True:
                 data = client_client_socket.recv(1024)  # Receive 1 KB at a time (adjust as needed)
@@ -107,7 +109,6 @@ def fetch_and_receive_file(file_name, client_server):
                 file.write(data)
 
         # inform_fetched_file(file_name, client_server)
-        print("FETCH SUCCESSFUL")
     except socket.error as e:
         print(f"Error on socket while fetching file: {e}")
         return
