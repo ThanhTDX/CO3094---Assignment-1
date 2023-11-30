@@ -31,7 +31,7 @@ client_host_socket.listen(5)
 # Function to send requests to the server
 def send_request(request):
     client_socket.send(request.encode())
-    response = client_socket.recv(1024).decode()
+    response = client_socket.recv(1024).decode(FORMAT)
     # print("Server response:", response)
     return response
 
@@ -44,15 +44,15 @@ def send_file(conn, file_path):
 
 # Function to fetch target clients for a file
 # Returns: dict of available client username and their ports
-def fetch_file_locations(file_name):
+def fetch_from_clients(file_name):
     request = f"FETCH {file_name}"
     return send_request(request)
 
 # Unecessary
 # Function to fetch a file
-def fetch_file(file_name):
-    request = f"FETCH FILE {file_name}"
-    send_request(request)
+# def fetch_file(file_name):
+#     request = f"FETCH FILE {file_name}"
+#     send_request(request)
 
 # Necessary?
 # Function to inform the server about a fetched file
