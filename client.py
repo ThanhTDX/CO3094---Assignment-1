@@ -48,7 +48,7 @@ def listen_for_server():
 # Function to process client's fetching file
 def fetch_file(file_name):
     # Client ask server about file and server returns clients with name's having the file
-    # Format [(username1, client_server_port1),(username2, client_server_port2),etc.]
+    # Format [(username1, client_ip1, client_server_port1),(username2, client_ip2, client_server_port2),etc.]
     target_clients = fetch_from_clients(file_name)
     # if server returns none raise exception
     if(target_clients == "none"): 
@@ -84,8 +84,8 @@ def fetch_file(file_name):
 # Function for client to connect to a different client and ask for file
 def fetch_and_receive_file(file_name, client_server):
     try:
-        ip_address = CLIENT_SERVER_IP 
-        port = int(client_server[1])
+        ip_address = int(client_server[1]) 
+        port = int(client_server[2])
         client_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_client_socket.connect((ip_address, port))
         client_client_socket.settimeout(5)

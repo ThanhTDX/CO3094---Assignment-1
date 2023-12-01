@@ -7,13 +7,12 @@ import json
 Client Configuration
 ''' 
 CLIENT_NAME = input("Enter your name: ")
-SERVER_IP = "127.0.0.1"
+SERVER_IP = "10.128.158.121"
 SERVER_PORT = 4456
 
-CLIENT_SERVER_IP = "127.0.0.1"
+CLIENT_SERVER_IP = "10.128.160.120"
 CLIENT_SERVER_PORT = 12346
 
-CLIENT_ID = "127.0.0.1:12346"
 BYTE = 1024
 FORMAT = 'utf-8'
 

@@ -3,14 +3,14 @@ import time
 import threading
 import json
 
-IP = "127.0.0.1"
+IP = "10.128.160.120"
 PORT = 4456
 SIZE = 1024
 FORMAT = "utf-8"
 
 # This can be done with list (not sure about array) 
 # They all have upsides and disadvantages
-client_list = {}    # store dict of id with format {port} : (username, ip, client_server_port)
+client_list = {}    # store dict of id with format {port} : (username, client_ip, client_server_port)
 file_list = {}      # Store list of client's id that have corresponding file (file - [(name, client_server_port)])
 blue_lock = threading.Lock()
 
@@ -78,12 +78,12 @@ def get_client_information(name):
         # else, None
         if value[0] == name:
             found_client = True
-            username, ip, client_server_port = value
+            username, client_ip, client_server_port = value
             break
     if not found_client:
         return None
     else:
-        return (username, ip, client_server_port)
+        return (username, client_ip, client_server_port)
 
 
 def ping_client(hostname):
@@ -228,13 +228,14 @@ def handle_fetch_file(client_conn, file_name):
 # Function for server when client publish file
 def handle_publish_file(client_conn, file_name):
     # file_list saves all usernames and their client_server_port
-    # eg: file_list["a.txt"] saves [(thanh, 4402), (an, 3054), etc.]
+    # eg: file_list["a.txt"] saves [(thanh, 10.127.158.120, 4402), (an, 10.127.158.120, 3054), etc.]
 
-    # get username and its client_server_port from client_conn
+    # get username, client_ip client_server_port from client_conn
     username = client_list[client_conn.getpeername()[1]][0]
+    client_ip = client_list[client_conn.getpeername()[1]][1]
     client_server_port = client_list[client_conn.getpeername()[1]][2]
 
-    file_list[file_name] = file_list.get(file_name, []) + [(username, client_server_port)]
+    file_list[file_name] = file_list.get(file_name, []) + [(username, client_ip , client_server_port)]
 
     send_message("Success", client_conn)
     print(f"Client {username} upload file {file_name}")
@@ -324,6 +325,7 @@ def main():
     # IP = 127.0.0.1, PORT = 4456
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((IP, PORT))
+    print(server_socket.getsockname()[0])
 
     # Limits listening clients to 20
     server_socket.listen(20)
