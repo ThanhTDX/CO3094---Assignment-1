@@ -1,8 +1,7 @@
 import socket
 import threading
 
-# Constants
-PORT = 12345
+PORT = 23456
 BUFFER_SIZE = 1024
 
 # Function to receive messages from the server

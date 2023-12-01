@@ -1,12 +1,8 @@
 import socket
 import threading
-import random
 
-# Constants
-PORT = 12345
+PORT = 23456
 BUFFER_SIZE = 1024
-
-# Global variables
 peers = []
 
 # Function to broadcast a message to all connected peers
