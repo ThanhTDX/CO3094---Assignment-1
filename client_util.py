@@ -7,10 +7,10 @@ import json
 Client Configuration
 ''' 
 CLIENT_NAME = input("Enter your name: ")
-SERVER_IP = "10.128.158.121"
+SERVER_IP = "191.16.31.141"
 SERVER_PORT = 4456
 
-CLIENT_SERVER_IP = "10.128.160.120"
+CLIENT_SERVER_IP = "191.16.31.141"
 CLIENT_SERVER_PORT = 12346
 
 BYTE = 1024
@@ -29,7 +29,6 @@ client_host_socket.bind((CLIENT_SERVER_IP, 0))
 client_host_socket.listen(5)
 
 # Function to send requests to the server
-
 def send_request(request):
     client_socket.send(request.encode())
     response = client_socket.recv(1024).decode(FORMAT)
@@ -55,14 +54,19 @@ def fetch_from_clients(file_name):
 #     request = f"FETCH FILE {file_name}"
 #     send_request(request)
 
-# Necessary?
+# LEGACY CODE
 # Function to inform the server about a fetched file
 def inform_fetched_file(file_name, client_id):
     request = f"INFORM {client_id} {file_name}"
     send_request(request)
 
+# LEGACY CODE
 def retrieve_connect_port(msg):
     haddr, paddr = msg[1:-1].split(", ")
     haddr = haddr[1:-1]
     paddr = int(paddr)
     return paddr
+
+# (127.0.0.1:12345)
+# h 127.0.0.1
+# p 12345

@@ -12,7 +12,7 @@ FORMAT = "utf-8"
 # They all have upsides and disadvantages
 client_list = {}    # store dict of id with format {port} : (username, client_ip, client_server_port)
 file_list = {}      # Store list of client's id that have corresponding file (file - [(name, client_server_port)])
-blue_lock = threading.Lock()
+# blue_lock = threading.Lock()
 
 
 # # Automatic mass client ping to check connection
@@ -23,6 +23,7 @@ blue_lock = threading.Lock()
 #             for key, value in client_list.items():
 #                 ping_thread = threading.Thread(target=ping_client,args=value[0])
 #                 ping_thread.start()
+
 # Func to send message to client
 def send_message(message, conn):
     # '''
@@ -322,9 +323,13 @@ def main():
     print("[STARTING] Server is starting.\n")
 
     # Server creates a socket with static IP and PORT for connection 
-    # IP = 127.0.0.1, PORT = 4456
+    # IP = https://www.tutorialspoint.com/python-program-to-find-the-ip-address-of-the-client
+    # PORT = 4456
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((IP, PORT))
+    hostname = socket.gethostname()
+    server_ip_address = socket.gethostbyname(hostname)
+    server_socket.bind((server_ip_address, PORT))
+
     print(server_socket.getsockname()[0])
 
     # Limits listening clients to 20

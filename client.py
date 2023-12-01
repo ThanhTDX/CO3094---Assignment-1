@@ -75,6 +75,7 @@ def fetch_file(file_name):
                 fetch_handler.start()
                 loop_break = True
                 client_found = True
+                print("FETCH SUCCESSFUL")
                 break
         if not client_found:
             print("User not found, try again.\n")
@@ -84,7 +85,7 @@ def fetch_file(file_name):
 # Function for client to connect to a different client and ask for file
 def fetch_and_receive_file(file_name, client_server):
     try:
-        ip_address = int(client_server[1]) 
+        ip_address = client_server[1]
         port = int(client_server[2])
         client_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_client_socket.connect((ip_address, port))
@@ -98,8 +99,6 @@ def fetch_and_receive_file(file_name, client_server):
         repository_path = CLIENT_NAME + "/"
         repository_path = os.path.join(repository_path, file_name)
         os.makedirs(os.path.dirname(repository_path), exist_ok=True)
-        
-        print("FETCH SUCCESSFUL")
         
         with open(repository_path, 'wb') as file:
             while True:
