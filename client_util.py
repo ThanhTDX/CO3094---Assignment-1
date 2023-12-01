@@ -42,21 +42,10 @@ def send_file(conn, file_path):
         while data:
             conn.send(data)
             data = file.read(1024)
-
-# Function to fetch target clients for a file
-# Returns: dict of available client username and their ports
 def fetch_from_clients(file_name):
     request = f"FETCH {file_name}"
     return send_request(request)
 
-# Unecessary
-# Function to fetch a file
-# def fetch_file(file_name):
-#     request = f"FETCH FILE {file_name}"
-#     send_request(request)
-
-# Necessary?
-# Function to inform the server about a fetched file
 def inform_fetched_file(file_name, client_id):
     request = f"INFORM {client_id} {file_name}"
     send_request(request)
