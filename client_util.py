@@ -7,7 +7,7 @@ import json
 Client Configuration
 ''' 
 CLIENT_NAME = input("Enter your name: ")
-SERVER_IP = "191.16.31.141"
+SERVER_IP = "10.128.158.121"
 SERVER_PORT = 4456
 
 CLIENT_SERVER_IP = "191.16.31.141"
@@ -24,7 +24,9 @@ client_socket.connect((SERVER_IP, SERVER_PORT))
 client_host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # https://stackoverflow.com/questions/1365265/on-localhost-how-do-i-pick-a-free-port-number
 # OS will create a random free port for client to bind
-client_host_socket.bind((CLIENT_SERVER_IP, 0))  
+hostname = socket.gethostname()
+server_ip_address = socket.gethostbyname(hostname)
+client_host_socket.bind((server_ip_address, 0))  
 # limit to 5 concurrent users
 client_host_socket.listen(5)
 

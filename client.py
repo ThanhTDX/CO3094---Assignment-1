@@ -1,23 +1,27 @@
 from client_util import *
 
 def handle_incoming_request(conn, addr):
-    data = conn.recv(BYTE).decode(FORMAT)
-    if not data:
-        return
-    # Process and handle the request from the other client
-    parts = data.split()
-    if parts[0].upper() == "FETCH":
-        # Handle FETCH request here
-        file_path = CLIENT_NAME + "/" + parts[1]
-        send_file(conn, file_path)
-        pass
-    elif parts[0].upper() == "PING":
-        # Handle PING request here
-        # Check for this while loop working
-        conn.send("PONG".encode())
-        pass
-    # Add more handlers for other request types
-    conn.close()
+    try:
+        data = conn.recv(BYTE).decode(FORMAT)
+        if not data:
+            return
+        # Process and handle the request from the other client
+        parts = data.split()
+        if parts[0].upper() == "FETCH":
+            # Handle FETCH request here
+            file_path = CLIENT_NAME + "/" + parts[1]
+            send_file(conn, file_path)
+            pass
+        elif parts[0].upper() == "PING":
+            # Handle PING request here
+            # Check for this while loop working
+            conn.send("PONG".encode())
+            pass
+        # Add more handlers for other request types
+        conn.close()
+    except Exception as e:
+        conn.close()
+    
 
 def listen_for_server():
     # Client connects to the server and starts sending request
