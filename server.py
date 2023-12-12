@@ -88,23 +88,7 @@ def get_client_information(name):
 
 
 def ping_client(hostname):
-    # LEGACY CODE
-    # message = 'ping' + " " + str(client_id)
-    # send_message(client_id, message)
-    # conn = client_list[client_id]
-
-    # time.sleep(0.1) # wait time for client to respond
-    # message_length = conn.recv(SIZE).decode(FORMAT) 
-    # if message_length:
-    #     message_length = int(message_length)
-    #     message = conn.recv(message_length).decode(FORMAT)
-    #     print(message)
-    #     return True
-    # else:
-    #     remove_client(client_id)
-    #     return False
-    # END LEGACY CODE
-
+    
     # If client_list is empty, return
     if not client_list:
         print("There's no user connecting right now.\n")
@@ -145,28 +129,6 @@ def ping_client(hostname):
     except Exception as e:
         return
 
-# LEGACY CODE
-def send_avail_sender_list(receiver_id, fname):
-    '''
-    The sending message follows this format:
-    [<id1>, <id2>, ...]
-    Example:
-        [('192.168.1.105', 62563), ('192.168.1.105', 62564)]
-        []
-    '''
-    conn = client_list[receiver_id]
-    sender_list = file_list.get(fname, [])
-    send_message(receiver_id, str(sender_list))
-    return (len(sender_list) > 0)
-
-# LEGACY CODE
-def check_valid_sender(client_id, fname):
-    sender_list = file_list[fname]
-    if (client_id in sender_list) and ping_client(client_id):
-        return True
-    else:
-        return False
-
 def handle_fetch_file(client_conn, file_name):
     '''
     The client's message that used for dertermine source client
@@ -185,32 +147,7 @@ def handle_fetch_file(client_conn, file_name):
     Example:
         ('192.168.1.105', 62563)
     '''
-    # Old logic ^
 
-    # LEGACY CODE
-    # conn = client_list[receiver_id]
-    # valid_sender = send_avail_sender_list(receiver_id, fname)
-    # if not valid_sender:
-    #     send_message(receiver_id, "invalid fetchfile")
-    # else:
-    #     while True:
-    #         # Get message from fetching client
-    #         message_length = conn.recv(SIZE).decode(FORMAT) 
-    #         if message_length:
-    #             message_length = int(message_length)
-    #             sender_id = conn.recv(message_length).decode(FORMAT)
-    #             if check_valid_sender(sender_id, fname):
-    #                 send_message(receiver_id, "valid sender_id")
-    #                 break
-
-
-    #     # Notify receiver
-    #     re_message = str(sender_id)
-    #     se_message = str(receiver_id) + " " + fname
-    #     send_message(receiver_id, se_message)
-    #     send_message(sender_id, re_message)
-
-    # New Logic
     # 
     # Server searches in file_list 
     # sends request client list of client's with name and client_server_port
